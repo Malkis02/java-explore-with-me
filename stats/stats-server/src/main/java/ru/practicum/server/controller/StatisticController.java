@@ -31,6 +31,7 @@ public class StatisticController {
                                                   @RequestParam String end,
                                                   @RequestParam(required = false) List<String> uris,
                                                   @RequestParam(defaultValue = "false") Boolean unique) {
+        log.info("getStats");
         return ResponseEntity.status(HttpStatus.OK).body(statisticService.getStats(start, end, uris, unique));
     }
 }

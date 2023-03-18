@@ -1,7 +1,6 @@
 package ru.practicum.server.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.CreateEndpointHitDto;
 import ru.practicum.dto.ListViewStats;
@@ -16,7 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 public class StatisticServiceImpl implements StatisticService {
     private final StatisticRepository statistics;
     private final StatisticMapper mapper;
@@ -38,12 +37,11 @@ public class StatisticServiceImpl implements StatisticService {
             viewStats = uris == null
                     ? statistics.getUniqueViewStatsByStartAndEndTime(parseStart, parseEnd)
                     : statistics.getUniqueUrisViewStatsByStartAndEndTime(parseStart, parseEnd, uris);
-            response = ListViewStats.builder().viewStats(viewStats).build();
         } else {
             viewStats = uris == null ? statistics.getViewStatsByStartAndEndTime(parseStart, parseEnd)
                     : statistics.getUrisViewStatsByStartAndEndTime(parseStart, parseEnd, uris);
-            response = ListViewStats.builder().viewStats(viewStats).build();
         }
+        response = ListViewStats.builder().viewStats(viewStats).build();
         return response;
     }
 }
