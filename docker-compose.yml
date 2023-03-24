@@ -1,7 +1,6 @@
 version: '3.8'
 services:
   stats-server:
-    restart: on-failure
     build: ./stats/stats-server
     image: stats-server-image
     container_name: ewm-stats-server
@@ -29,7 +28,6 @@ services:
       - POSTGRES_PASSWORD=root
 
   ewm-service:
-    restart: on-failure
     build: ./server
     image: emw-server-image
     container_name: emw-main-server
