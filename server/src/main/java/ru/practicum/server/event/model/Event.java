@@ -24,7 +24,7 @@ public class Event {
     private Long eventId;
     @Column(nullable = false, length = 2000)
     private String annotation;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
     @Column(nullable = false, length = 7000)
@@ -45,7 +45,7 @@ public class Event {
     private Integer confirmedRequests = 0;
     @Column(name = "created_on", nullable = false)
     private LocalDateTime createdOn;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "initiator")
     private User initiator;
     @Column(name = "published_on")

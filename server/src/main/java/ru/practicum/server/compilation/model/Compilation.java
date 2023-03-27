@@ -16,7 +16,7 @@ public class Compilation {
     @Column(name = "compilation_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long compilationId;
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "event_compilations",
             joinColumns = @JoinColumn(name = "compilation_id"),

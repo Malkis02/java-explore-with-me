@@ -58,7 +58,7 @@ public class EventServiceImp implements EventService {
         Category category = categories.findById(eventDto.getCategory()).orElseThrow(
                 () -> new NotFoundException("Category with id=" + eventDto.getCategory() + " was not found"));
         Event newEvent = mapper.mapToEvent(eventDto);
-        if (newEvent.getEventDate().isBefore(LocalDateTime.now().minusHours(2))) {
+        if (newEvent.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new AccessException("Field: eventDate. Error: должно содержать дату, которая еще не наступила. " +
                     "Value: " + eventDto.getEventDate());
         } else {

@@ -20,10 +20,10 @@ public class Request {
     private Long requestId;
     @Column
     private LocalDateTime created = LocalDateTime.now();
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
     @Enumerated(EnumType.STRING)
