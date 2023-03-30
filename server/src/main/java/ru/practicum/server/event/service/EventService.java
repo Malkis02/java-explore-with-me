@@ -19,8 +19,7 @@ public interface EventService {
 
     EventFullDto updateEventUser(Long userId, Long eventId, UpdateEventUserRequest updateEvent);
 
-    ListEventFullDto getEventsByFiltersForAdmin(List<Long> ids, List<String> states, List<Long> categories,
-                                                LocalDateTime rangeStart, LocalDateTime rangeEnd, Pageable pageable);
+    ListEventFullDto getEventsByFiltersForAdmin(EventAdminRequestDto event, Pageable pageable);
 
     EventFullDto updateEventAdmin(Long eventId, UpdateEventAdminRequest updateEvent);
 
@@ -30,7 +29,6 @@ public interface EventService {
 
     EventFullDto getEventByIdPublic(Long eventId, HttpServletRequest servlet);
 
-    ListEventShortDto getEventsByFiltersPublic(String text, List<Long> categories, Boolean paid,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
+    ListEventShortDto getEventsByFiltersPublic(EventPublicRequestDto event,
                                                Pageable pageable, HttpServletRequest servlet);
 }

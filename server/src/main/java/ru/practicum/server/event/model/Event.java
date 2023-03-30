@@ -53,6 +53,8 @@ public class Event {
     private LocalDateTime publishedOn;
     @Enumerated(EnumType.STRING)
     private State state = State.PENDING;
+    @Column
+    private Long views = 0L;
     @OneToMany(mappedBy = "event",fetch = FetchType.LAZY)
     private Set<Request> requests;
     @ManyToMany(mappedBy = "events")

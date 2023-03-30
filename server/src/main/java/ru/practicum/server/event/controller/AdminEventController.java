@@ -9,9 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.server.event.dto.EventFullDto;
-import ru.practicum.server.event.dto.ListEventFullDto;
-import ru.practicum.server.event.dto.UpdateEventAdminRequest;
+import ru.practicum.server.event.dto.*;
 import ru.practicum.server.event.service.EventService;
 
 import javax.validation.Valid;
@@ -39,7 +37,14 @@ public class AdminEventController {
             @RequestParam(defaultValue = "10") @Min(1) Integer size) {
         log.info("get events by filter:");
         return ResponseEntity.status(HttpStatus.OK)
-                .body(eventService.getEventsByFiltersForAdmin(users, states, categories, rangeStart, rangeEnd,
+                .body(eventService.getEventsByFiltersForAdmin(EventAdminRequestDto
+                                .builder()
+                                .users(users)
+                                .states(states)
+                                .categories(categories)
+                                .rangeStart(rangeStart)
+                                .rangeEnd(rangeEnd)
+                                .build(),
                         PageRequest.of(from / size, size)));
     }
 

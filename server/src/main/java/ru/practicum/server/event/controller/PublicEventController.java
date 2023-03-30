@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.server.event.dto.EventFullDto;
+import ru.practicum.server.event.dto.EventPublicRequestDto;
 import ru.practicum.server.event.dto.ListEventShortDto;
 import ru.practicum.server.event.enums.EventSort;
 import ru.practicum.server.event.service.EventService;
@@ -19,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Min;
 import java.time.LocalDateTime;
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/events")
@@ -50,7 +52,16 @@ public class PublicEventController {
             HttpServletRequest servlet) {
         log.info("get events public");
         return ResponseEntity.status(HttpStatus.OK)
-                .body(eventService.getEventsByFiltersPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable,
+                .body(eventService.getEventsByFiltersPublic(EventPublicRequestDto
+                        .builder()
+                        .text(text)
+                        .categories(categories)
+                        .paid(paid)
+                        .rangeStart(rangeStart)
+                        .rangeEnd(rangeEnd)
+                        .onlyAvailable(onlyAvailable)
+                        .sort(sort)
+                        .build(),
                         PageRequest.of(from / size, size, Sort.by(EventSort.getSortField(sort)).ascending()), servlet));
     }
 }

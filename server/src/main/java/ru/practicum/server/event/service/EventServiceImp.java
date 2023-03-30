@@ -4,6 +4,8 @@ import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,7 +19,7 @@ import ru.practicum.server.event.mapper.EventMapper;
 import ru.practicum.server.event.model.Event;
 import ru.practicum.server.event.model.QEvent;
 import ru.practicum.server.event.repository.EventRepository;
-import ru.practicum.client.StatisticClient;
+import ru.practicum.client.statclient.StatisticClient;
 import ru.practicum.server.handler.exception.AccessException;
 import ru.practicum.server.handler.exception.EventStateException;
 import ru.practicum.server.handler.exception.NotFoundException;
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@ComponentScan("ru.practicum.client.statclient")
 public class EventServiceImp implements EventService {
     private final EventRepository events;
     private final UserRepository users;
@@ -119,9 +122,9 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
-    public ListEventFullDto getEventsByFiltersForAdmin(List<Long> ids, List<String> states, List<Long> categories,
-                                                       LocalDateTime rangeStart, LocalDateTime rangeEnd, Pageable pageable) {
-        BooleanBuilder booleanBuilder = createQuery(ids, states, categories, rangeStart, rangeEnd);
+    public ListEventFullDto getEventsByFiltersForAdmin(EventAdminRequestDto event, Pageable pageable) {
+        BooleanBuilder booleanBuilder = createQuery(event.getUsers(), event.getStates(), event.getCategories(),
+                event.getRangeStart(), event.getRangeEnd());
         Page<Event> page;
         if (booleanBuilder.getValue() != null) {
             page = events.findAll(booleanBuilder, pageable);
@@ -176,7 +179,7 @@ public class EventServiceImp implements EventService {
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         if (!event.getInitiator().getUserId().equals(userId))
             throw new NotFoundException(String.format("User with id = %d not initiator of event with id = %d", userId, eventId));
-        if (event.getParticipantLimit().equals(0L) || !event.getRequestModeration()) {
+        if (event.getParticipantLimit().equals(0) || !event.getRequestModeration()) {
             return EventRequestStatusUpdateResult
                     .builder()
                     .build();
@@ -237,6 +240,7 @@ public class EventServiceImp implements EventService {
         statisticClient.postStats(servlet, "ewm-server");
         Event event = events.findByEventIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+        event.setViews(statisticClient.getViews(eventId));
         return mapper.mapToEventFullDto(events.save(event));
     }
 
@@ -263,33 +267,32 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
-    public ListEventShortDto getEventsByFiltersPublic(String text, List<Long> categories, Boolean paid,
-                                                      LocalDateTime rangeStart, LocalDateTime rangeEnd,
-                                                      Boolean onlyAvailable,
+    public ListEventShortDto getEventsByFiltersPublic(EventPublicRequestDto event,
                                                       Pageable pageable, HttpServletRequest servlet) {
         statisticClient.postStats(servlet, "ewm-server");
-        BooleanBuilder booleanBuilder = createQuery(null, null, categories, rangeStart, rangeEnd);
+        BooleanBuilder booleanBuilder = createQuery(null, null, event.getCategories(), event.getRangeStart()
+                , event.getRangeEnd());
         Page<Event> page;
-        if (text != null) {
-            booleanBuilder.and(QEvent.event.annotation.likeIgnoreCase(text))
-                    .or(QEvent.event.description.likeIgnoreCase(text));
+        if (event.getText() != null) {
+            booleanBuilder.and(QEvent.event.annotation.likeIgnoreCase(event.getText()))
+                    .or(QEvent.event.description.likeIgnoreCase(event.getText()));
         }
-        if (rangeStart == null && rangeEnd == null) {
+        if (event.getRangeStart() == null && event.getRangeEnd() == null) {
             booleanBuilder.and(QEvent.event.eventDate.after(LocalDateTime.now()));
         }
-        if (onlyAvailable) {
+        if (event.getOnlyAvailable()) {
             booleanBuilder.and((QEvent.event.participantLimit.eq(0)))
                     .or(QEvent.event.participantLimit.gt(QEvent.event.confirmedRequests));
         }
-        if (paid != null) {
-            booleanBuilder.and(QEvent.event.paid.eq(paid));
+        if (event.getPaid() != null) {
+            booleanBuilder.and(QEvent.event.paid.eq(event.getPaid()));
         }
         if (booleanBuilder.getValue() != null) {
             page = events.findAll(booleanBuilder.getValue(), pageable);
         } else {
             page = events.findAll(pageable);
-            for (Event event : page) {
-                event.setRequests(event.getRequests()
+            for (Event ev : page) {
+                ev.setRequests(ev.getRequests()
                         .stream()
                         .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED))
                         .collect(Collectors.toSet()));
