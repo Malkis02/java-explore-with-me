@@ -4,7 +4,6 @@ import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +29,7 @@ import ru.practicum.server.request.dto.ParticipationRequestList;
 import ru.practicum.server.request.enums.RequestStatus;
 import ru.practicum.server.request.mapper.RequestMapper;
 import ru.practicum.server.request.model.Request;
+import ru.practicum.server.request.repository.RequestRepository;
 import ru.practicum.server.user.model.User;
 import ru.practicum.server.user.repository.UserRepository;
 
@@ -51,6 +51,7 @@ public class EventServiceImp implements EventService {
     private final CategoryRepository categories;
     private final EventMapper mapper;
     private final RequestMapper requestMapper;
+    private final RequestRepository requestRepository;
     private final StatisticClient statisticClient;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -270,8 +271,8 @@ public class EventServiceImp implements EventService {
     public ListEventShortDto getEventsByFiltersPublic(EventPublicRequestDto event,
                                                       Pageable pageable, HttpServletRequest servlet) {
         statisticClient.postStats(servlet, "ewm-server");
-        BooleanBuilder booleanBuilder = createQuery(null, null, event.getCategories(), event.getRangeStart()
-                , event.getRangeEnd());
+        BooleanBuilder booleanBuilder = createQuery(null, null, event.getCategories(), event.getRangeStart(),
+                event.getRangeEnd());
         Page<Event> page;
         if (event.getText() != null) {
             booleanBuilder.and(QEvent.event.annotation.likeIgnoreCase(event.getText()))
@@ -292,10 +293,11 @@ public class EventServiceImp implements EventService {
         } else {
             page = events.findAll(pageable);
             for (Event ev : page) {
-                ev.setRequests(ev.getRequests()
+                ev.setRequests(requestRepository.findAllByEvent(ev)
                         .stream()
                         .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED))
                         .collect(Collectors.toSet()));
+                ev.setViews(statisticClient.getViews(ev.getEventId()));
             }
         }
         return ListEventShortDto

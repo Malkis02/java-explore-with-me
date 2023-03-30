@@ -23,4 +23,5 @@ public interface EventRepository extends PagingAndSortingRepository<Event, Long>
     Optional<Event> findByEventIdAndState(Long eventId, State state);
 
     List<Event> findAllByCategory(Category category);
+
 }

@@ -7,8 +7,6 @@ import ru.practicum.server.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.server.request.dto.ParticipationRequestList;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.util.List;
 
 public interface EventService {
     EventFullDto addNewEvent(Long userId, NewEventDto eventDto);
