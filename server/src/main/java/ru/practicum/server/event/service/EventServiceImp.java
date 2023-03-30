@@ -288,7 +288,7 @@ public class EventServiceImp implements EventService {
             page = events.findAll(booleanBuilder.getValue(), pageable);
         } else {
             page = events.findAll(pageable);
-            for(Event event : page){
+            for (Event event : page) {
                 event.setRequests(event.getRequests()
                         .stream()
                         .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED))

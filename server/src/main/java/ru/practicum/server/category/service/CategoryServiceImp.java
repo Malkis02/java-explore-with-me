@@ -47,7 +47,7 @@ public class CategoryServiceImp implements CategoryService {
         if (!categories.existsById(catId)) {
             throw new NotFoundException("Category with id=" + catId + " was not found");
         } else {
-            if(eventsList.isEmpty()){
+            if (eventsList.isEmpty()) {
                 categories.deleteById(catId);
             } else {
                 throw new AccessException("Category is not empty");
