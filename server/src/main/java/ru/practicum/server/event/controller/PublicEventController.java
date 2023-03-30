@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.server.event.dto.EventFullDto;
 import ru.practicum.server.event.dto.ListEventShortDto;
 import ru.practicum.server.event.enums.EventSort;
+import ru.practicum.server.event.mapper.EventMapper;
 import ru.practicum.server.event.service.EventService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,6 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class PublicEventController {
     private final EventService eventService;
+
 
     @GetMapping("{id}")
     public ResponseEntity<EventFullDto> getEventById(@PathVariable("id") @Min(1) Long eventId,
@@ -49,8 +51,7 @@ public class PublicEventController {
             HttpServletRequest servlet) {
         log.info("get events public");
         return ResponseEntity.status(HttpStatus.OK)
-                .body(eventService.getEventsByFiltersPublic(
-                        text, categories, paid, rangeStart, rangeEnd, onlyAvailable,
+                .body(eventService.getEventsByFiltersPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable,
                         PageRequest.of(from / size, size, Sort.by(EventSort.getSortField(sort)).ascending()), servlet));
     }
 }

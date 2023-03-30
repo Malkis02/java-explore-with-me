@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
+import ru.practicum.server.category.model.Category;
 import ru.practicum.server.event.enums.State;
 import ru.practicum.server.event.model.Event;
 
@@ -20,4 +21,6 @@ public interface EventRepository extends PagingAndSortingRepository<Event, Long>
     Set<Event> findAllByEventIdIn(List<Long> eventIds);
 
     Optional<Event> findByEventIdAndState(Long eventId, State state);
+
+    List<Event> findAllByCategory(Category category);
 }

@@ -10,13 +10,20 @@ import ru.practicum.server.category.dto.NewCategoryDtoResp;
 import ru.practicum.server.category.dto.UpdateCategoryDto;
 import ru.practicum.server.category.mapper.CategoryMapper;
 import ru.practicum.server.category.repository.CategoryRepository;
+import ru.practicum.server.event.model.Event;
+import ru.practicum.server.event.repository.EventRepository;
+import ru.practicum.server.handler.exception.AccessException;
 import ru.practicum.server.handler.exception.NotFoundException;
+
+import java.util.List;
 
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class CategoryServiceImp implements CategoryService {
     private final CategoryRepository categories;
+
+    private final EventRepository events;
 
     private final CategoryMapper mapper;
 
@@ -36,10 +43,16 @@ public class CategoryServiceImp implements CategoryService {
 
     @Override
     public void deleteCategory(Long catId) {
+        List<Event> eventsList = events.findAllByCategory(categories.findById(catId).orElseThrow());
         if (!categories.existsById(catId)) {
             throw new NotFoundException("Category with id=" + catId + " was not found");
         } else {
-            categories.deleteById(catId);
+            if(eventsList.isEmpty()){
+                categories.deleteById(catId);
+            } else {
+                throw new AccessException("Category is not empty");
+            }
+
         }
     }
 

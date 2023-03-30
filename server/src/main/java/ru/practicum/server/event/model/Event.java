@@ -6,6 +6,7 @@ import ru.practicum.server.category.model.Category;
 import ru.practicum.server.compilation.model.Compilation;
 import ru.practicum.server.event.enums.State;
 import ru.practicum.server.event.location.Location;
+import ru.practicum.server.request.enums.RequestStatus;
 import ru.practicum.server.request.model.Request;
 import ru.practicum.server.user.model.User;
 
@@ -52,11 +53,13 @@ public class Event {
     private LocalDateTime publishedOn;
     @Enumerated(EnumType.STRING)
     private State state = State.PENDING;
-    @Column
-    private Long views = 0L;
-    @OneToMany(mappedBy = "event")
+    @OneToMany(mappedBy = "event",fetch = FetchType.LAZY)
     private Set<Request> requests;
     @ManyToMany(mappedBy = "events")
     private Set<Compilation> compilations;
 
+    public Long getConfirmedRequestsCount() {
+        return this.getRequests().stream()
+                .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED)).count();
+    }
 }

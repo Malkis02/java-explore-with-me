@@ -44,4 +44,5 @@ public interface EventMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(source = "eventDate", target = "eventDate", dateFormat = "yyyy-MM-dd HH:mm:ss")
     Event mapToEvent(UpdateEventAdminRequest updateEvent, @MappingTarget Event event);
+
 }

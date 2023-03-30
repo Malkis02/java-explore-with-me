@@ -1,5 +1,6 @@
 package ru.practicum.server.category.controller;
 
+import com.sun.xml.bind.api.AccessorException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,7 @@ public class AdminCategoryController {
     }
 
     @DeleteMapping("{catId}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable @Min(1) Long catId) {
+    public ResponseEntity<Void> deleteCategory(@PathVariable @Min(1) Long catId) throws AccessorException {
         log.info("delete category with id={}", catId);
         categoryService.deleteCategory(catId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

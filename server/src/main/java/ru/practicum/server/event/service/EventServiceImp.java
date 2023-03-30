@@ -17,7 +17,7 @@ import ru.practicum.server.event.mapper.EventMapper;
 import ru.practicum.server.event.model.Event;
 import ru.practicum.server.event.model.QEvent;
 import ru.practicum.server.event.repository.EventRepository;
-import ru.practicum.server.event.statclient.StatisticClient;
+import ru.practicum.client.StatisticClient;
 import ru.practicum.server.handler.exception.AccessException;
 import ru.practicum.server.handler.exception.EventStateException;
 import ru.practicum.server.handler.exception.NotFoundException;
@@ -27,7 +27,7 @@ import ru.practicum.server.request.dto.ParticipationRequestDto;
 import ru.practicum.server.request.dto.ParticipationRequestList;
 import ru.practicum.server.request.enums.RequestStatus;
 import ru.practicum.server.request.mapper.RequestMapper;
-import ru.practicum.server.request.repository.RequestRepository;
+import ru.practicum.server.request.model.Request;
 import ru.practicum.server.user.model.User;
 import ru.practicum.server.user.repository.UserRepository;
 
@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,7 +50,6 @@ public class EventServiceImp implements EventService {
     private final RequestMapper requestMapper;
     private final StatisticClient statisticClient;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private final RequestRepository requestRepository;
 
     @Override
     public EventFullDto addNewEvent(Long userId, NewEventDto eventDto) {
@@ -105,7 +105,7 @@ public class EventServiceImp implements EventService {
             Event event = events.findByEventIdAndInitiatorUserId(eventId, userId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
             if (event.getState().equals(State.PUBLISHED)) {
-                throw new AccessException("Only pending or canceled events can be changed");
+                throw new AccessException("The event cannot be updated because it has already been published");
             }
             if (updateEvent.getCategory() != null) {
                 event.setCategory(categories.findById(updateEvent.getCategory()).orElseThrow(
@@ -170,24 +170,65 @@ public class EventServiceImp implements EventService {
 
     @Override
     @Transactional
-    public EventRequestStatusUpdateResult approveRequests(Long userId, Long eventId, EventRequestStatusUpdate requests) {
-        if (users.existsById(userId)) {
-            Event event = events.findByEventIdAndInitiatorUserId(eventId, userId)
+    public EventRequestStatusUpdateResult approveRequests(Long userId, Long eventId,
+                                                                   EventRequestStatusUpdate eventDto) {
+        Event event = events.findByEventIdAndInitiatorUserId(eventId, userId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-            if (event.getParticipantLimit() <= event.getConfirmedRequests()) {
-                throw new AccessException("The participant limit has been reached");
-            }
-            List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
-            List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
-            moderationRequests(confirmedRequests, rejectedRequests, event, requests);
+        if (!event.getInitiator().getUserId().equals(userId))
+            throw new NotFoundException(String.format("User with id = %d not initiator of event with id = %d", userId, eventId));
+        if (event.getParticipantLimit().equals(0L) || !event.getRequestModeration()) {
             return EventRequestStatusUpdateResult
                     .builder()
-                    .confirmedRequests(confirmedRequests)
-                    .rejectedRequests(rejectedRequests)
                     .build();
-        } else {
-            throw new NotFoundException("User with id=" + userId + " was not found");
         }
+
+        var countConfirmedReq = event.getConfirmedRequestsCount();
+        if (countConfirmedReq >= event.getParticipantLimit())
+            throw new AccessException("The participant limit has been reached");
+
+        List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
+        List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
+
+        List<Request> requests = event.getRequests().stream()
+                .filter(o -> eventDto.getRequestIds().contains(o.getRequestId()))
+                .collect(Collectors.toList());
+        Set<Long> requestsId = requests.stream()
+                .map(Request::getRequestId)
+                .collect(Collectors.toSet());
+        eventDto.getRequestIds().forEach(o -> {
+            if (!requestsId.contains(o)) {
+                throw new NotFoundException(String.format("Request with id = %d not found", o));
+            }
+        });
+
+        switch (eventDto.getStatus()) {
+            case "CONFIRMED":
+                for (Request request : requests) {
+                    checkRequestStatus(request);
+                    if (countConfirmedReq < event.getParticipantLimit()) {
+                        request.setStatus(RequestStatus.CONFIRMED);
+                        confirmedRequests.add(requestMapper.mapToRequestDto(request));
+                        countConfirmedReq++;
+                    } else {
+                        request.setStatus(RequestStatus.REJECTED);
+                        rejectedRequests.add(requestMapper.mapToRequestDto(request));
+                    }
+                }
+                break;
+            case "REJECTED":
+                for (Request request : requests) {
+                    checkRequestStatus(request);
+                    request.setStatus(RequestStatus.REJECTED);
+                    rejectedRequests.add(requestMapper.mapToRequestDto(request));
+                }
+        }
+
+
+        return  EventRequestStatusUpdateResult
+                .builder()
+                .confirmedRequests(confirmedRequests)
+                .rejectedRequests(rejectedRequests)
+                .build();
     }
 
     @Override
@@ -196,7 +237,6 @@ public class EventServiceImp implements EventService {
         statisticClient.postStats(servlet, "ewm-server");
         Event event = events.findByEventIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-        event.setViews(statisticClient.getViews(eventId));
         return mapper.mapToEventFullDto(events.save(event));
     }
 
@@ -248,6 +288,12 @@ public class EventServiceImp implements EventService {
             page = events.findAll(booleanBuilder.getValue(), pageable);
         } else {
             page = events.findAll(pageable);
+            for(Event event : page){
+                event.setRequests(event.getRequests()
+                        .stream()
+                        .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED))
+                        .collect(Collectors.toSet()));
+            }
         }
         return ListEventShortDto
                 .builder()
@@ -280,38 +326,15 @@ public class EventServiceImp implements EventService {
         return booleanBuilder;
     }
 
-    private void moderationRequests(List<ParticipationRequestDto> confirmedRequests,
-                                    List<ParticipationRequestDto> rejectedRequests,
-                                    Event event, EventRequestStatusUpdate requests) {
-        requestRepository.findAllByRequestIdIn(requests.getRequestIds()).stream().peek(r -> {
-            if (r.getStatus().equals(RequestStatus.PENDING)) {
-                if (event.getParticipantLimit() == 0) {
-                    r.setStatus(RequestStatus.CONFIRMED);
-                    event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-                } else if (event.getParticipantLimit() > event.getConfirmedRequests()) {
-                    if (!event.getRequestModeration()) {
-                        r.setStatus(RequestStatus.CONFIRMED);
-                        event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-                    } else {
-                        if (requests.getStatus().equals(RequestStatus.CONFIRMED.toString())) {
-                            r.setStatus(RequestStatus.CONFIRMED);
-                            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-                        } else {
-                            r.setStatus(RequestStatus.REJECTED);
-                        }
-                    }
-                } else {
-                    r.setStatus(RequestStatus.REJECTED);
-                }
-            } else {
-                throw new AccessException("Can only confirm PENDING requests");
-            }
-        }).map(requestMapper::mapToRequestDto).forEach(r -> {
-            if (r.getStatus().equals(RequestStatus.CONFIRMED)) {
-                confirmedRequests.add(r);
-            } else {
-                rejectedRequests.add(r);
-            }
-        });
+    private void checkRequestStatus(Request request) {
+        if (request.getStatus().equals(RequestStatus.CONFIRMED))
+            throw new AccessException(String.format(
+                    "Request with id = %d has already been published", request.getRequestId()));
+        if (request.getStatus().equals(RequestStatus.REJECTED))
+            throw new AccessException(String.format(
+                    "Request with id = %d has been rejected and cannot be published", request.getRequestId()));
+        if (request.getStatus().equals(RequestStatus.CANCELED))
+            throw new AccessException(String.format(
+                    "Request with id = %d has been canceled and cannot be published", request.getRequestId()));
     }
 }
