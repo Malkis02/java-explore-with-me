@@ -23,7 +23,7 @@ public class StatisticController {
     @PostMapping("/hit")
     public ResponseEntity<ResponseEndpointHitDto> addEndpointHit(@RequestBody CreateEndpointHitDto endpointHitDto) {
         log.info("addEndpointHit: {}", endpointHitDto);
-        return ResponseEntity.status(HttpStatus.OK).body(statisticService.addEndpointHit(endpointHitDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(statisticService.addEndpointHit(endpointHitDto));
     }
 
     @GetMapping("/stats")
