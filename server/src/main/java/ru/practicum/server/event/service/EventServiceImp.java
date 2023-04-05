@@ -241,7 +241,6 @@ public class EventServiceImp implements EventService {
         statisticClient.postStats(servlet, "ewm-server");
         Event event = events.findByEventIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-        event.setViews(statisticClient.getViews(eventId));
         return mapper.mapToEventFullDto(events.save(event));
     }
 
@@ -297,7 +296,7 @@ public class EventServiceImp implements EventService {
                         .stream()
                         .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED))
                         .collect(Collectors.toSet()));
-                ev.setViews(statisticClient.getViews(ev.getEventId()));
+                ev.setViews(statisticClient.getViews(ev.getEventId(),event.getRangeStart(),event.getRangeEnd()));
             }
         }
         return ListEventShortDto

@@ -3,6 +3,7 @@ package ru.practicum.server.event.model;
 import lombok.Getter;
 import lombok.Setter;
 import ru.practicum.server.category.model.Category;
+import ru.practicum.server.comment.model.Comment;
 import ru.practicum.server.compilation.model.Compilation;
 import ru.practicum.server.event.enums.State;
 import ru.practicum.server.event.location.Location;
@@ -59,6 +60,8 @@ public class Event {
     private Set<Request> requests;
     @ManyToMany(mappedBy = "events")
     private Set<Compilation> compilations;
+    @OneToMany(mappedBy = "event",fetch = FetchType.LAZY)
+    private Set<Comment> comments;
 
     public Long getConfirmedRequestsCount() {
         return this.getRequests().stream()

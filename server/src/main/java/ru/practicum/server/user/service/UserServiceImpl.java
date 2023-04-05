@@ -6,16 +6,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.server.handler.exception.NotFoundException;
 import ru.practicum.server.user.dto.ListNewUserRequestResp;
 import ru.practicum.server.user.dto.NewUserRequest;
 import ru.practicum.server.user.dto.NewUserRequestResponse;
+import ru.practicum.server.user.dto.UserBlockCommentStatusUpd;
+import ru.practicum.server.user.enums.UserBanAction;
 import ru.practicum.server.user.mapper.UserMapper;
 import ru.practicum.server.user.model.QUser;
 import ru.practicum.server.user.model.User;
 import ru.practicum.server.user.repository.UserRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -53,5 +57,22 @@ public class UserServiceImpl implements UserService {
         } else {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
+    }
+
+    @Override
+    @Transactional
+    public ListNewUserRequestResp changeUserCommentsStatus(UserBlockCommentStatusUpd users) {
+        List<NewUserRequestResponse> response = usersRepository.findAllByUserIdIn(users.getUserIds()).stream().peek(u -> {
+            if (users.getStatus().equals(UserBanAction.BANNED)) {
+                u.setAreCommentsBlocked(Boolean.TRUE);
+            }
+            if (users.getStatus().equals(UserBanAction.UNBANNED)) {
+                u.setAreCommentsBlocked(Boolean.FALSE);
+            }
+        }).map(mapper::mapToUserRequestResp).collect(Collectors.toList());
+        return ListNewUserRequestResp
+                .builder()
+                .users(response)
+                .build();
     }
 }

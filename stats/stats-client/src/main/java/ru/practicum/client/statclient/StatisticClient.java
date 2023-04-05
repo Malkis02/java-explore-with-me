@@ -32,11 +32,11 @@ public class StatisticClient extends BaseClient {
                 .build());
     }
 
-    public Long getViews(Long eventId) {
+    public Long getViews(Long eventId,LocalDateTime start,LocalDateTime end) {
         String url = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
         Map<String, Object> parameters = Map.of(
-        "start", LocalDateTime.now().minusYears(100).format(formatter),
-                "end", LocalDateTime.now().format(formatter),
+        "start", start,
+                "end", end,
                 "uris", "/events/" + eventId,
                 "unique", "false"
         );
