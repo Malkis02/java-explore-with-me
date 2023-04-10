@@ -256,7 +256,6 @@ public class EventServiceImp implements EventService {
                     rejectedRequests.add(requestMapper.mapToRequestDto(request));
                 }
         }
-        
         return  EventRequestStatusUpdateResult
                 .builder()
                 .confirmedRequests(confirmedRequests)
