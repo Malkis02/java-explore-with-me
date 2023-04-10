@@ -8,7 +8,6 @@ import ru.practicum.server.comment.dto.NewCommentDto;
 import ru.practicum.server.comment.model.Comment;
 
 import java.util.List;
-import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface CommentMapper {

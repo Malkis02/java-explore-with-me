@@ -148,18 +148,17 @@ public class EventServiceImp implements EventService {
                 .build();
         List<ViewStats> viewStats = statisticClient.getViews(eventsId);
         Map<Long,ViewStats> views = new HashMap<>();
-        for(ViewStats stat:viewStats){
+        for (ViewStats stat:viewStats) {
             views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
         }
-        System.out.println(viewStats);
-        for(EventFullDto eventFull: fullDto.getEvents()){
-            if(views.containsKey(eventFull.getId())){
+        for (EventFullDto eventFull: fullDto.getEvents()) {
+            if (views.containsKey(eventFull.getId())) {
                 eventFull.setViews(views.get(eventFull.getId()).getHits());
                 eventFull.setConfirmedRequests(requestRepository.findAllByEventEventId(eventFull.getId())
                         .stream()
                         .map(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
                         .count());
-            }else {
+            } else {
                 eventFull.setViews(0L);
             }
         }
@@ -216,7 +215,7 @@ public class EventServiceImp implements EventService {
 
         var countConfirmedReq = requestRepository.findAllByEvent(event)
                 .stream()
-                .filter(r->r.getStatus().equals(RequestStatus.CONFIRMED))
+                .filter(r -> r.getStatus().equals(RequestStatus.CONFIRMED))
                 .count();
         if (countConfirmedReq >= event.getParticipantLimit())
             throw new AccessException("The participant limit has been reached");
@@ -335,18 +334,17 @@ public class EventServiceImp implements EventService {
                 .build();
         List<ViewStats> viewStats = statisticClient.getViews(eventsId);
         Map<Long,ViewStats> views = new HashMap<>();
-        for(ViewStats stat:viewStats){
+        for (ViewStats stat:viewStats) {
             views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
         }
-        System.out.println(viewStats);
-        for(EventShortDto eventShort: shortDto.getEvents()){
-            if(views.containsKey(eventShort.getId())){
+        for (EventShortDto eventShort: shortDto.getEvents()) {
+            if (views.containsKey(eventShort.getId())) {
                 eventShort.setViews(views.get(eventShort.getId()).getHits());
                 eventShort.setConfirmedRequests(requestRepository.findAllByEventEventId(eventShort.getId())
                         .stream()
                         .map(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
                         .count());
-            }else {
+            } else {
              eventShort.setViews(0L);
             }
         }
