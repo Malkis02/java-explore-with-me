@@ -34,6 +34,7 @@ public class BaseClient {
         return prepareEventClientResponse2(statsServerResponse);
     }
 
+
     private ResponseEntity<Object> prepareEventClientResponse(ResponseEntity<Object> response) {
         if (response.getStatusCode().is2xxSuccessful()) {
             return response;

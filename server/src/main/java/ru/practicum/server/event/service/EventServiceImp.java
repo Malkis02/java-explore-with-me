@@ -9,8 +9,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.dto.ViewStats;
 import ru.practicum.server.category.model.Category;
 import ru.practicum.server.category.repository.CategoryRepository;
+import ru.practicum.server.comment.mapper.CommentMapper;
+import ru.practicum.server.comment.repository.CommentRepository;
 import ru.practicum.server.event.dto.*;
 import ru.practicum.server.event.enums.State;
 import ru.practicum.server.event.enums.StateAction;
@@ -36,9 +39,7 @@ import ru.practicum.server.user.repository.UserRepository;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,7 +50,9 @@ public class EventServiceImp implements EventService {
     private final EventRepository events;
     private final UserRepository users;
     private final CategoryRepository categories;
+    private final CommentRepository commentRepository;
     private final EventMapper mapper;
+    private final CommentMapper commentMapper;
     private final RequestMapper requestMapper;
     private final RequestRepository requestRepository;
     private final StatisticClient statisticClient;
@@ -88,8 +91,11 @@ public class EventServiceImp implements EventService {
     @Override
     public EventFullDto getPrivateUserEvent(Long userId, Long eventId) {
         if (users.existsById(userId)) {
-            return mapper.mapToEventFullDto(events.findByEventIdAndInitiatorUserId(eventId, userId)
+            EventFullDto fullDto = mapper.mapToEventFullDto(events.findByEventIdAndInitiatorUserId(eventId, userId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found")));
+            fullDto.setViews(statisticClient.getViews(eventId));
+            fullDto.setComments(commentMapper.mapToListCommentShort(commentRepository.findAllByEventEventIdAndAuthorUserId(eventId,userId)));
+            return fullDto;
         } else {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
@@ -132,10 +138,32 @@ public class EventServiceImp implements EventService {
         } else {
             page = events.findAll(pageable);
         }
-        return ListEventFullDto
+        List<Long> eventsId = events.findAll()
+                .stream()
+                .map(Event::getEventId)
+                .collect(Collectors.toList());
+        ListEventFullDto fullDto = ListEventFullDto
                 .builder()
                 .events(mapper.mapToListEventFullDto(page.getContent()))
                 .build();
+        List<ViewStats> viewStats = statisticClient.getViews(eventsId);
+        Map<Long,ViewStats> views = new HashMap<>();
+        for(ViewStats stat:viewStats){
+            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
+        }
+        System.out.println(viewStats);
+        for(EventFullDto eventFull: fullDto.getEvents()){
+            if(views.containsKey(eventFull.getId())){
+                eventFull.setViews(views.get(eventFull.getId()).getHits());
+                eventFull.setConfirmedRequests(requestRepository.findAllByEventEventId(eventFull.getId())
+                        .stream()
+                        .map(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
+                        .count());
+            }else {
+                eventFull.setViews(0L);
+            }
+        }
+        return fullDto;
     }
 
     @Override
@@ -165,7 +193,7 @@ public class EventServiceImp implements EventService {
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
             return ParticipationRequestList
                     .builder()
-                    .requests(event.getRequests().stream().map(requestMapper::mapToRequestDto).collect(Collectors.toList()))
+                    .requests(requestRepository.findAllByEvent(event).stream().map(requestMapper::mapToRequestDto).collect(Collectors.toList()))
                     .build();
         } else {
             throw new NotFoundException("User with id=" + userId + " was not found");
@@ -186,14 +214,17 @@ public class EventServiceImp implements EventService {
                     .build();
         }
 
-        var countConfirmedReq = event.getConfirmedRequestsCount();
+        var countConfirmedReq = requestRepository.findAllByEvent(event)
+                .stream()
+                .filter(r->r.getStatus().equals(RequestStatus.CONFIRMED))
+                .count();
         if (countConfirmedReq >= event.getParticipantLimit())
             throw new AccessException("The participant limit has been reached");
 
         List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
         List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
 
-        List<Request> requests = event.getRequests().stream()
+        List<Request> requests = requestRepository.findAllByEvent(event).stream()
                 .filter(o -> eventDto.getRequestIds().contains(o.getRequestId()))
                 .collect(Collectors.toList());
         Set<Long> requestsId = requests.stream()
@@ -241,7 +272,9 @@ public class EventServiceImp implements EventService {
         statisticClient.postStats(servlet, "ewm-server");
         Event event = events.findByEventIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-        return mapper.mapToEventFullDto(events.save(event));
+        EventFullDto eventDto = mapper.mapToEventFullDto(event);
+        eventDto.setViews(statisticClient.getViews(eventId));
+        return eventDto;
     }
 
     private void changeEventState(Event event, String actionState) {
@@ -291,18 +324,34 @@ public class EventServiceImp implements EventService {
             page = events.findAll(booleanBuilder.getValue(), pageable);
         } else {
             page = events.findAll(pageable);
-            for (Event ev : page) {
-                ev.setRequests(requestRepository.findAllByEvent(ev)
-                        .stream()
-                        .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED))
-                        .collect(Collectors.toSet()));
-                ev.setViews(statisticClient.getViews(ev.getEventId(),event.getRangeStart(),event.getRangeEnd()));
-            }
         }
-        return ListEventShortDto
+        List<Long> eventsId = events.findAll()
+                .stream()
+                .map(Event::getEventId)
+                .collect(Collectors.toList());
+        ListEventShortDto shortDto = ListEventShortDto
                 .builder()
                 .events(mapper.mapToListEventShortDto(page.getContent()))
                 .build();
+        List<ViewStats> viewStats = statisticClient.getViews(eventsId);
+        Map<Long,ViewStats> views = new HashMap<>();
+        for(ViewStats stat:viewStats){
+            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
+        }
+        System.out.println(viewStats);
+        for(EventShortDto eventShort: shortDto.getEvents()){
+            if(views.containsKey(eventShort.getId())){
+                eventShort.setViews(views.get(eventShort.getId()).getHits());
+                eventShort.setConfirmedRequests(requestRepository.findAllByEventEventId(eventShort.getId())
+                        .stream()
+                        .map(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
+                        .count());
+            }else {
+             eventShort.setViews(0L);
+            }
+        }
+        return shortDto;
+
     }
 
     private BooleanBuilder createQuery(List<Long> ids, List<String> states, List<Long> categories,

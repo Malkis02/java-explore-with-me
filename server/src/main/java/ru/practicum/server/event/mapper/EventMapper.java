@@ -1,6 +1,7 @@
 package ru.practicum.server.event.mapper;
 
 import org.mapstruct.*;
+import org.springframework.data.domain.Page;
 import ru.practicum.server.category.mapper.CategoryMapper;
 import ru.practicum.server.comment.mapper.CommentMapper;
 import ru.practicum.server.event.dto.*;

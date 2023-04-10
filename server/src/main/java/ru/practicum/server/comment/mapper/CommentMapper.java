@@ -7,6 +7,7 @@ import ru.practicum.server.comment.dto.CommentShortDto;
 import ru.practicum.server.comment.dto.NewCommentDto;
 import ru.practicum.server.comment.model.Comment;
 
+import java.util.List;
 import java.util.Set;
 
 @Mapper(componentModel = "spring")
@@ -22,7 +23,7 @@ public interface CommentMapper {
     @Mapping(source = "created", target = "created", dateFormat = "yyyy-MM-dd HH:mm:ss")
     CommentShortDto mapToCommentShortDto(Comment comment);
 
-    Set<CommentShortDto> mapToSetCommentShort(Set<Comment> comments);
+    List<CommentShortDto> mapToListCommentShort(List<Comment> comments);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     Comment mapToComment(CommentDtoUpdate updateComment, @MappingTarget Comment comment);

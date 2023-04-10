@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@Transactional
 public class CommentServiceImp implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentMapper mapper;
@@ -110,6 +111,7 @@ public class CommentServiceImp implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CommentDtoResponse getCommentPrivate(Long userId, Long commentId) {
         Comment comment = commentRepository.findByCommentIdAndAuthorUserId(commentId, userId)
                 .orElseThrow(() -> new NotFoundException("Comment with commentId=" + commentId
@@ -118,6 +120,7 @@ public class CommentServiceImp implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CommentDtoList getCommentsPrivate(Long userId, Long eventId) {
         return CommentDtoList
                 .builder()
@@ -127,6 +130,7 @@ public class CommentServiceImp implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CommentDtoList getCommentsPublic(Long eventId) {
         return CommentDtoList
                 .builder()
@@ -136,6 +140,7 @@ public class CommentServiceImp implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CommentDtoResponse getCommentPublic(Long commentId) {
         return mapper.mapToCommentResponse(commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with commentId=" + commentId + " not found")));
