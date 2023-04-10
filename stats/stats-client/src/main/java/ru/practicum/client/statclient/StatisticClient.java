@@ -56,7 +56,7 @@ public class StatisticClient extends BaseClient {
                 );
                 ResponseEntity<List<ViewStats>> response = get(url, parameters);
                 System.out.println(response);
-                if(Objects.requireNonNull(response.getBody()).size()!=0){
+                if (Objects.requireNonNull(response.getBody()).size() != 0) {
                     viewStatsList.add(response.getBody().get(0));
                 }
             }
