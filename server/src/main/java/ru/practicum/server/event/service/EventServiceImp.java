@@ -9,7 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.w3c.dom.ls.LSOutput;
 import ru.practicum.dto.ViewStats;
 import ru.practicum.server.category.model.Category;
 import ru.practicum.server.category.repository.CategoryRepository;
@@ -370,8 +369,6 @@ public class EventServiceImp implements EventService {
         Map<Long,List<Comment>> comments = commentList
                 .stream()
                 .collect(Collectors.groupingBy(c -> c.getEvent().getEventId()));
-        System.out.println(comments);
-        System.out.println(requests);
         for (ViewStats stat:viewStats) {
             views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
         }
@@ -416,8 +413,6 @@ public class EventServiceImp implements EventService {
         Map<Long,List<Comment>> comments = commentList
                 .stream()
                 .collect(Collectors.groupingBy(c -> c.getEvent().getEventId()));
-        System.out.println(comments);
-        System.out.println(requests);
         for (ViewStats stat:viewStats) {
             views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
         }
