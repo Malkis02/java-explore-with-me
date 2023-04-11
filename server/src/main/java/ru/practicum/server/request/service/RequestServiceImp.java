@@ -20,6 +20,7 @@ import ru.practicum.server.user.repository.UserRepository;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@Transactional
 public class RequestServiceImp implements RequestService {
     private final RequestRepository requests;
     private final UserRepository users;
@@ -27,7 +28,6 @@ public class RequestServiceImp implements RequestService {
     private final RequestMapper mapper;
 
     @Override
-    @Transactional
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         Event event = events.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
@@ -50,6 +50,7 @@ public class RequestServiceImp implements RequestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ParticipationRequestList getUserRequests(Long userId) {
         if (users.existsById(userId)) {
             return ParticipationRequestList
@@ -62,7 +63,6 @@ public class RequestServiceImp implements RequestService {
     }
 
     @Override
-    @Transactional
     public ParticipationRequestDto canceledRequest(Long userId, Long requestId) {
         if (!users.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");

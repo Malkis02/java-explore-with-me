@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepository usersRepository;
     private final UserMapper mapper;
@@ -33,6 +34,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListNewUserRequestResp getUsers(List<Long> ids, Pageable pageable) {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         if (ids != null && !ids.isEmpty()) {
@@ -60,7 +62,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public ListNewUserRequestResp changeUserCommentsStatus(UserBlockCommentStatusUpd users) {
         List<NewUserRequestResponse> response = usersRepository.findAllByUserIdIn(users.getUserIds()).stream().peek(u -> {
             if (users.getStatus().equals(UserBanAction.BANNED)) {

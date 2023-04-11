@@ -23,6 +23,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@Transactional
 public class CompilationServiceImp implements CompilationService {
     private final CompilationRepository compilations;
     private final CompilationMapper mapper;
@@ -46,7 +47,6 @@ public class CompilationServiceImp implements CompilationService {
     }
 
     @Override
-    @Transactional
     public CompilationDtoResp updateCompilation(Long compId, UpdateCompilationRequest updateCompilation) {
         Compilation compilation = compilations.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
@@ -57,12 +57,14 @@ public class CompilationServiceImp implements CompilationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CompilationDtoResp getCompilation(Long compId) {
         return mapper.mapToCompilationResp(compilations.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found")));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CompilationDtoList getCompilations(Boolean pinned, Pageable pageable) {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         Page<Compilation> page;

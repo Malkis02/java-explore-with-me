@@ -44,7 +44,7 @@ public class StatisticClient extends BaseClient {
         return viewStatsList != null && !viewStatsList.isEmpty() ? viewStatsList.get(0).getHits() : 0L;
     }
 
-    public  List<ViewStats> getViews(List<Long> eventId) {
+    public  List<ViewStats> getViews(List<Long> eventId,Boolean isUniq) {
         String url = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
         List<ViewStats> viewStatsList = new ArrayList<>();
             for (Long id : eventId) {
@@ -52,7 +52,7 @@ public class StatisticClient extends BaseClient {
                         "start", LocalDateTime.now().minusYears(100).format(formatter),
                         "end", LocalDateTime.now().format(formatter),
                         "uris", "/events/" + id,
-                        "unique", "false"
+                        "unique", isUniq
                 );
                 ResponseEntity<List<ViewStats>> response = get(url, parameters);
                 if (Objects.requireNonNull(response.getBody()).size() != 0) {
@@ -61,7 +61,6 @@ public class StatisticClient extends BaseClient {
             }
         return  viewStatsList;
     }
-
 
     public void postStats(HttpServletRequest servlet, String app) {
         CreateEndpointHitDto hit = CreateEndpointHitDto

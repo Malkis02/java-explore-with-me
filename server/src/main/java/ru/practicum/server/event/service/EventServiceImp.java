@@ -13,6 +13,7 @@ import ru.practicum.dto.ViewStats;
 import ru.practicum.server.category.model.Category;
 import ru.practicum.server.category.repository.CategoryRepository;
 import ru.practicum.server.comment.mapper.CommentMapper;
+import ru.practicum.server.comment.model.Comment;
 import ru.practicum.server.comment.repository.CommentRepository;
 import ru.practicum.server.event.dto.*;
 import ru.practicum.server.event.enums.State;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @ComponentScan("ru.practicum.client.statclient")
+@Transactional
 public class EventServiceImp implements EventService {
     private final EventRepository events;
     private final UserRepository users;
@@ -77,6 +79,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListEventShortDto getPrivateUserEvents(Long userId, Pageable pageable) {
         if (users.existsById(userId)) {
             return ListEventShortDto
@@ -89,6 +92,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EventFullDto getPrivateUserEvent(Long userId, Long eventId) {
         if (users.existsById(userId)) {
             EventFullDto fullDto = mapper.mapToEventFullDto(events.findByEventIdAndInitiatorUserId(eventId, userId)
@@ -129,6 +133,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListEventFullDto getEventsByFiltersForAdmin(EventAdminRequestDto event, Pageable pageable) {
         BooleanBuilder booleanBuilder = createQuery(event.getUsers(), event.getStates(), event.getCategories(),
                 event.getRangeStart(), event.getRangeEnd());
@@ -138,31 +143,7 @@ public class EventServiceImp implements EventService {
         } else {
             page = events.findAll(pageable);
         }
-        List<Long> eventsId = events.findAll()
-                .stream()
-                .map(Event::getEventId)
-                .collect(Collectors.toList());
-        ListEventFullDto fullDto = ListEventFullDto
-                .builder()
-                .events(mapper.mapToListEventFullDto(page.getContent()))
-                .build();
-        List<ViewStats> viewStats = statisticClient.getViews(eventsId);
-        Map<Long,ViewStats> views = new HashMap<>();
-        for (ViewStats stat:viewStats) {
-            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
-        }
-        for (EventFullDto eventFull: fullDto.getEvents()) {
-            if (views.containsKey(eventFull.getId())) {
-                eventFull.setViews(views.get(eventFull.getId()).getHits());
-                eventFull.setConfirmedRequests(requestRepository.findAllByEventEventId(eventFull.getId())
-                        .stream()
-                        .map(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
-                        .count());
-            } else {
-                eventFull.setViews(0L);
-            }
-        }
-        return fullDto;
+        return setViewsAndCommentsAndRequestsForAdmin(page);
     }
 
     @Override
@@ -186,6 +167,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ParticipationRequestList getUserEventRequests(Long userId, Long eventId) {
         if (users.existsById(userId)) {
             Event event = events.findByEventIdAndInitiatorUserId(eventId, userId)
@@ -200,7 +182,6 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
-    @Transactional
     public EventRequestStatusUpdateResult approveRequests(Long userId, Long eventId,
                                                                    EventRequestStatusUpdate eventDto) {
         Event event = events.findByEventIdAndInitiatorUserId(eventId, userId)
@@ -264,13 +245,18 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public EventFullDto getEventByIdPublic(Long eventId, HttpServletRequest servlet) {
         statisticClient.postStats(servlet, "ewm-server");
         Event event = events.findByEventIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         EventFullDto eventDto = mapper.mapToEventFullDto(event);
         eventDto.setViews(statisticClient.getViews(eventId));
+        eventDto.setComments(commentMapper.mapToListCommentShort(commentRepository.findAllByEventEventId(eventId)));
+        eventDto.setConfirmedRequests(requestRepository.findAllByEvent(event)
+                .stream()
+                .filter(r -> r.getStatus().equals(RequestStatus.CONFIRMED))
+                .count());
         return eventDto;
     }
 
@@ -297,6 +283,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListEventShortDto getEventsByFiltersPublic(EventPublicRequestDto event,
                                                       Pageable pageable, HttpServletRequest servlet) {
         statisticClient.postStats(servlet, "ewm-server");
@@ -322,32 +309,7 @@ public class EventServiceImp implements EventService {
         } else {
             page = events.findAll(pageable);
         }
-        List<Long> eventsId = events.findAll()
-                .stream()
-                .map(Event::getEventId)
-                .collect(Collectors.toList());
-        ListEventShortDto shortDto = ListEventShortDto
-                .builder()
-                .events(mapper.mapToListEventShortDto(page.getContent()))
-                .build();
-        List<ViewStats> viewStats = statisticClient.getViews(eventsId);
-        Map<Long,ViewStats> views = new HashMap<>();
-        for (ViewStats stat:viewStats) {
-            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
-        }
-        for (EventShortDto eventShort: shortDto.getEvents()) {
-            if (views.containsKey(eventShort.getId())) {
-                eventShort.setViews(views.get(eventShort.getId()).getHits());
-                eventShort.setConfirmedRequests(requestRepository.findAllByEventEventId(eventShort.getId())
-                        .stream()
-                        .map(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
-                        .count());
-            } else {
-             eventShort.setViews(0L);
-            }
-        }
-        return shortDto;
-
+        return setViewsAndCommentsAndRequestsForPublic(page);
     }
 
     private BooleanBuilder createQuery(List<Long> ids, List<String> states, List<Long> categories,
@@ -386,4 +348,111 @@ public class EventServiceImp implements EventService {
             throw new AccessException(String.format(
                     "Request with id = %d has been canceled and cannot be published", request.getRequestId()));
     }
+
+    private ListEventFullDto setViewsAndCommentsAndRequestsForAdmin(Page<Event> page) {
+        List<Long> eventsId = events.findAll()
+                .stream()
+                .map(Event::getEventId)
+                .collect(Collectors.toList());
+        ListEventFullDto fullDto = ListEventFullDto
+                .builder()
+                .events(mapper.mapToListEventFullDto(page.getContent()))
+                .build();
+        List<ViewStats> viewStats = statisticClient.getViews(eventsId,false);
+        Map<Long,ViewStats> views = new HashMap<>();
+        List<Request> requestList = requestRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Request>> requests = new HashMap<>();
+        List<Comment> commentList = commentRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Comment>> comments = new HashMap<>();
+        for (Comment comment:commentList) {
+            comments.put(comment.getEvent().getEventId(),commentList
+                        .stream()
+                        .filter(c -> c.getEvent().getEventId().equals(comment.getEvent().getEventId()))
+                        .collect(Collectors.toList()));
+        }
+        for (Request request:requestList) {
+            if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
+                requests.put(request.getEvent().getEventId(), requestList
+                        .stream()
+                        .filter(r -> r.getEvent().getEventId().equals(request.getEvent().getEventId()))
+                        .collect(Collectors.toList()));
+            }
+        }
+        System.out.println(requests);
+        for (ViewStats stat:viewStats) {
+            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
+        }
+        for (EventFullDto eventFull: fullDto.getEvents()) {
+            if (views.containsKey(eventFull.getId())) {
+                eventFull.setViews(views.get(eventFull.getId()).getHits());
+            } else {
+                eventFull.setViews(0L);
+            }
+        }
+        for (EventFullDto eventFullDto: fullDto.getEvents()) {
+            if (requests.containsKey(eventFullDto.getId())) {
+                eventFullDto.setConfirmedRequests((long) requests.get(eventFullDto.getId()).size());
+            }
+        }
+
+        for (EventFullDto eventFullDto: fullDto.getEvents()) {
+            if (comments.containsKey(eventFullDto.getId())) {
+                eventFullDto.setComments(commentMapper.mapToListCommentShort(comments.get(eventFullDto.getId())));
+            }
+        }
+        return fullDto;
+    }
+
+    private ListEventShortDto setViewsAndCommentsAndRequestsForPublic(Page<Event> page) {
+        List<Long> eventsId = events.findAll()
+                .stream()
+                .map(Event::getEventId)
+                .collect(Collectors.toList());
+        ListEventShortDto shortDto = ListEventShortDto
+                .builder()
+                .events(mapper.mapToListEventShortDto(page.getContent()))
+                .build();
+        List<ViewStats> viewStats = statisticClient.getViews(eventsId,false);
+        Map<Long,ViewStats> views = new HashMap<>();
+        List<Request> requestList = requestRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Request>> requests = new HashMap<>();
+        List<Comment> commentList = commentRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Comment>> comments = new HashMap<>();
+        for (Comment comment:commentList) {
+            comments.put(comment.getEvent().getEventId(),commentList
+                    .stream()
+                    .filter(c -> c.getEvent().getEventId().equals(comment.getEvent().getEventId()))
+                    .collect(Collectors.toList()));
+        }
+        for (Request request:requestList) {
+            if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
+                requests.put(request.getEvent().getEventId(), requestList
+                        .stream()
+                        .filter(r -> r.getEvent().getEventId().equals(request.getEvent().getEventId()))
+                        .collect(Collectors.toList()));
+            }
+        }
+        for (ViewStats stat:viewStats) {
+            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
+        }
+        for (EventShortDto eventShort: shortDto.getEvents()) {
+            if (views.containsKey(eventShort.getId())) {
+                eventShort.setViews(views.get(eventShort.getId()).getHits());
+            } else {
+                eventShort.setViews(0L);
+            }
+        }
+        for (EventShortDto eventShortDto: shortDto.getEvents()) {
+            if (requests.containsKey(eventShortDto.getId())) {
+                eventShortDto.setConfirmedRequests((long) requests.get(eventShortDto.getId()).size());
+            }
+        }
+        for (EventShortDto eventShortDto: shortDto.getEvents()) {
+            if (comments.containsKey(eventShortDto.getId())) {
+                eventShortDto.setComments(commentMapper.mapToListCommentShort(comments.get(eventShortDto.getId())));
+            }
+        }
+        return shortDto;
+    }
+
 }
