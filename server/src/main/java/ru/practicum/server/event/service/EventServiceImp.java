@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.w3c.dom.ls.LSOutput;
 import ru.practicum.dto.ViewStats;
 import ru.practicum.server.category.model.Category;
 import ru.practicum.server.category.repository.CategoryRepository;
@@ -361,23 +362,15 @@ public class EventServiceImp implements EventService {
         List<ViewStats> viewStats = statisticClient.getViews(eventsId,false);
         Map<Long,ViewStats> views = new HashMap<>();
         List<Request> requestList = requestRepository.findAllByEventEventIdIn(eventsId);
-        Map<Long,List<Request>> requests = new HashMap<>();
+        Map<Long,List<Request>> requests = requestList
+                .stream()
+                .filter(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
+                .collect(Collectors.groupingBy(r -> r.getEvent().getEventId()));
         List<Comment> commentList = commentRepository.findAllByEventEventIdIn(eventsId);
-        Map<Long,List<Comment>> comments = new HashMap<>();
-        for (Comment comment:commentList) {
-            comments.put(comment.getEvent().getEventId(),commentList
-                        .stream()
-                        .filter(c -> c.getEvent().getEventId().equals(comment.getEvent().getEventId()))
-                        .collect(Collectors.toList()));
-        }
-        for (Request request:requestList) {
-            if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
-                requests.put(request.getEvent().getEventId(), requestList
-                        .stream()
-                        .filter(r -> r.getEvent().getEventId().equals(request.getEvent().getEventId()))
-                        .collect(Collectors.toList()));
-            }
-        }
+        Map<Long,List<Comment>> comments = commentList
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getEvent().getEventId()));
+        System.out.println(comments);
         System.out.println(requests);
         for (ViewStats stat:viewStats) {
             views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
@@ -415,23 +408,16 @@ public class EventServiceImp implements EventService {
         List<ViewStats> viewStats = statisticClient.getViews(eventsId,false);
         Map<Long,ViewStats> views = new HashMap<>();
         List<Request> requestList = requestRepository.findAllByEventEventIdIn(eventsId);
-        Map<Long,List<Request>> requests = new HashMap<>();
+        Map<Long,List<Request>> requests = requestList
+                .stream()
+                .filter(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
+                .collect(Collectors.groupingBy(r -> r.getEvent().getEventId()));
         List<Comment> commentList = commentRepository.findAllByEventEventIdIn(eventsId);
-        Map<Long,List<Comment>> comments = new HashMap<>();
-        for (Comment comment:commentList) {
-            comments.put(comment.getEvent().getEventId(),commentList
-                    .stream()
-                    .filter(c -> c.getEvent().getEventId().equals(comment.getEvent().getEventId()))
-                    .collect(Collectors.toList()));
-        }
-        for (Request request:requestList) {
-            if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
-                requests.put(request.getEvent().getEventId(), requestList
-                        .stream()
-                        .filter(r -> r.getEvent().getEventId().equals(request.getEvent().getEventId()))
-                        .collect(Collectors.toList()));
-            }
-        }
+        Map<Long,List<Comment>> comments = commentList
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getEvent().getEventId()));
+        System.out.println(comments);
+        System.out.println(requests);
         for (ViewStats stat:viewStats) {
             views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
         }
