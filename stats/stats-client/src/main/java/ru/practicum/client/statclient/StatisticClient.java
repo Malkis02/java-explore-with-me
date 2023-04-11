@@ -31,13 +31,13 @@ public class StatisticClient extends BaseClient {
                 .build());
     }
 
-    public Long getViews(Long eventId) {
+    public Long getViews(Long eventId,Boolean isUniq) {
         String url = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
         Map<String, Object> parameters = Map.of(
         "start", LocalDateTime.now().minusYears(100).format(formatter),
                 "end", LocalDateTime.now().format(formatter),
                 "uris", "/events/" + eventId,
-                "unique", "false"
+                "unique", isUniq
         );
         ResponseEntity<List<ViewStats>> response = get(url, parameters);
         List<ViewStats> viewStatsList = response.hasBody() ? response.getBody() : null;

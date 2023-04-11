@@ -97,7 +97,7 @@ public class EventServiceImp implements EventService {
         if (users.existsById(userId)) {
             EventFullDto fullDto = mapper.mapToEventFullDto(events.findByEventIdAndInitiatorUserId(eventId, userId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found")));
-            fullDto.setViews(statisticClient.getViews(eventId));
+            fullDto.setViews(statisticClient.getViews(eventId,false));
             fullDto.setComments(commentMapper.mapToListCommentShort(commentRepository.findAllByEventEventIdAndAuthorUserId(eventId,userId)));
             return fullDto;
         } else {
@@ -251,7 +251,7 @@ public class EventServiceImp implements EventService {
         Event event = events.findByEventIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         EventFullDto eventDto = mapper.mapToEventFullDto(event);
-        eventDto.setViews(statisticClient.getViews(eventId));
+        eventDto.setViews(statisticClient.getViews(eventId,false));
         eventDto.setComments(commentMapper.mapToListCommentShort(commentRepository.findAllByEventEventId(eventId)));
         eventDto.setConfirmedRequests(requestRepository.findAllByEvent(event)
                 .stream()
