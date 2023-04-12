@@ -9,8 +9,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.dto.ViewStats;
 import ru.practicum.server.category.model.Category;
 import ru.practicum.server.category.repository.CategoryRepository;
+import ru.practicum.server.comment.mapper.CommentMapper;
+import ru.practicum.server.comment.model.Comment;
+import ru.practicum.server.comment.repository.CommentRepository;
 import ru.practicum.server.event.dto.*;
 import ru.practicum.server.event.enums.State;
 import ru.practicum.server.event.enums.StateAction;
@@ -36,20 +40,21 @@ import ru.practicum.server.user.repository.UserRepository;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @ComponentScan("ru.practicum.client.statclient")
+@Transactional
 public class EventServiceImp implements EventService {
     private final EventRepository events;
     private final UserRepository users;
     private final CategoryRepository categories;
+    private final CommentRepository commentRepository;
     private final EventMapper mapper;
+    private final CommentMapper commentMapper;
     private final RequestMapper requestMapper;
     private final RequestRepository requestRepository;
     private final StatisticClient statisticClient;
@@ -74,6 +79,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListEventShortDto getPrivateUserEvents(Long userId, Pageable pageable) {
         if (users.existsById(userId)) {
             return ListEventShortDto
@@ -86,10 +92,14 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EventFullDto getPrivateUserEvent(Long userId, Long eventId) {
         if (users.existsById(userId)) {
-            return mapper.mapToEventFullDto(events.findByEventIdAndInitiatorUserId(eventId, userId)
+            EventFullDto fullDto = mapper.mapToEventFullDto(events.findByEventIdAndInitiatorUserId(eventId, userId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found")));
+            fullDto.setViews(statisticClient.getViews(eventId,false));
+            fullDto.setComments(commentMapper.mapToListCommentShort(commentRepository.findAllByEventEventIdAndAuthorUserId(eventId,userId)));
+            return fullDto;
         } else {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
@@ -123,6 +133,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListEventFullDto getEventsByFiltersForAdmin(EventAdminRequestDto event, Pageable pageable) {
         BooleanBuilder booleanBuilder = createQuery(event.getUsers(), event.getStates(), event.getCategories(),
                 event.getRangeStart(), event.getRangeEnd());
@@ -132,10 +143,7 @@ public class EventServiceImp implements EventService {
         } else {
             page = events.findAll(pageable);
         }
-        return ListEventFullDto
-                .builder()
-                .events(mapper.mapToListEventFullDto(page.getContent()))
-                .build();
+        return setViewsAndCommentsAndRequestsForAdmin(page);
     }
 
     @Override
@@ -159,13 +167,14 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ParticipationRequestList getUserEventRequests(Long userId, Long eventId) {
         if (users.existsById(userId)) {
             Event event = events.findByEventIdAndInitiatorUserId(eventId, userId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
             return ParticipationRequestList
                     .builder()
-                    .requests(event.getRequests().stream().map(requestMapper::mapToRequestDto).collect(Collectors.toList()))
+                    .requests(requestRepository.findAllByEvent(event).stream().map(requestMapper::mapToRequestDto).collect(Collectors.toList()))
                     .build();
         } else {
             throw new NotFoundException("User with id=" + userId + " was not found");
@@ -173,7 +182,6 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
-    @Transactional
     public EventRequestStatusUpdateResult approveRequests(Long userId, Long eventId,
                                                                    EventRequestStatusUpdate eventDto) {
         Event event = events.findByEventIdAndInitiatorUserId(eventId, userId)
@@ -186,14 +194,17 @@ public class EventServiceImp implements EventService {
                     .build();
         }
 
-        var countConfirmedReq = event.getConfirmedRequestsCount();
+        var countConfirmedReq = requestRepository.findAllByEvent(event)
+                .stream()
+                .filter(r -> r.getStatus().equals(RequestStatus.CONFIRMED))
+                .count();
         if (countConfirmedReq >= event.getParticipantLimit())
             throw new AccessException("The participant limit has been reached");
 
         List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
         List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
 
-        List<Request> requests = event.getRequests().stream()
+        List<Request> requests = requestRepository.findAllByEvent(event).stream()
                 .filter(o -> eventDto.getRequestIds().contains(o.getRequestId()))
                 .collect(Collectors.toList());
         Set<Long> requestsId = requests.stream()
@@ -226,8 +237,6 @@ public class EventServiceImp implements EventService {
                     rejectedRequests.add(requestMapper.mapToRequestDto(request));
                 }
         }
-
-
         return  EventRequestStatusUpdateResult
                 .builder()
                 .confirmedRequests(confirmedRequests)
@@ -236,13 +245,19 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public EventFullDto getEventByIdPublic(Long eventId, HttpServletRequest servlet) {
         statisticClient.postStats(servlet, "ewm-server");
         Event event = events.findByEventIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-        event.setViews(statisticClient.getViews(eventId));
-        return mapper.mapToEventFullDto(events.save(event));
+        EventFullDto eventDto = mapper.mapToEventFullDto(event);
+        eventDto.setViews(statisticClient.getViews(eventId,false));
+        eventDto.setComments(commentMapper.mapToListCommentShort(commentRepository.findAllByEventEventId(eventId)));
+        eventDto.setConfirmedRequests(requestRepository.findAllByEvent(event)
+                .stream()
+                .filter(r -> r.getStatus().equals(RequestStatus.CONFIRMED))
+                .count());
+        return eventDto;
     }
 
     private void changeEventState(Event event, String actionState) {
@@ -268,6 +283,7 @@ public class EventServiceImp implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListEventShortDto getEventsByFiltersPublic(EventPublicRequestDto event,
                                                       Pageable pageable, HttpServletRequest servlet) {
         statisticClient.postStats(servlet, "ewm-server");
@@ -292,18 +308,8 @@ public class EventServiceImp implements EventService {
             page = events.findAll(booleanBuilder.getValue(), pageable);
         } else {
             page = events.findAll(pageable);
-            for (Event ev : page) {
-                ev.setRequests(requestRepository.findAllByEvent(ev)
-                        .stream()
-                        .filter(o -> o.getStatus().equals(RequestStatus.CONFIRMED))
-                        .collect(Collectors.toSet()));
-                ev.setViews(statisticClient.getViews(ev.getEventId()));
-            }
         }
-        return ListEventShortDto
-                .builder()
-                .events(mapper.mapToListEventShortDto(page.getContent()))
-                .build();
+        return setViewsAndCommentsAndRequestsForPublic(page);
     }
 
     private BooleanBuilder createQuery(List<Long> ids, List<String> states, List<Long> categories,
@@ -342,4 +348,92 @@ public class EventServiceImp implements EventService {
             throw new AccessException(String.format(
                     "Request with id = %d has been canceled and cannot be published", request.getRequestId()));
     }
+
+    private ListEventFullDto setViewsAndCommentsAndRequestsForAdmin(Page<Event> page) {
+        List<Long> eventsId = events.findAll()
+                .stream()
+                .map(Event::getEventId)
+                .collect(Collectors.toList());
+        ListEventFullDto fullDto = ListEventFullDto
+                .builder()
+                .events(mapper.mapToListEventFullDto(page.getContent()))
+                .build();
+        List<ViewStats> viewStats = statisticClient.getViews(eventsId,false);
+        Map<Long,ViewStats> views = new HashMap<>();
+        List<Request> requestList = requestRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Request>> requests = requestList
+                .stream()
+                .filter(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
+                .collect(Collectors.groupingBy(r -> r.getEvent().getEventId()));
+        List<Comment> commentList = commentRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Comment>> comments = commentList
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getEvent().getEventId()));
+        for (ViewStats stat:viewStats) {
+            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
+        }
+        for (EventFullDto eventFull: fullDto.getEvents()) {
+            if (views.containsKey(eventFull.getId())) {
+                eventFull.setViews(views.get(eventFull.getId()).getHits());
+            } else {
+                eventFull.setViews(0L);
+            }
+        }
+        for (EventFullDto eventFullDto: fullDto.getEvents()) {
+            if (requests.containsKey(eventFullDto.getId())) {
+                eventFullDto.setConfirmedRequests((long) requests.get(eventFullDto.getId()).size());
+            }
+        }
+
+        for (EventFullDto eventFullDto: fullDto.getEvents()) {
+            if (comments.containsKey(eventFullDto.getId())) {
+                eventFullDto.setComments(commentMapper.mapToListCommentShort(comments.get(eventFullDto.getId())));
+            }
+        }
+        return fullDto;
+    }
+
+    private ListEventShortDto setViewsAndCommentsAndRequestsForPublic(Page<Event> page) {
+        List<Long> eventsId = events.findAll()
+                .stream()
+                .map(Event::getEventId)
+                .collect(Collectors.toList());
+        ListEventShortDto shortDto = ListEventShortDto
+                .builder()
+                .events(mapper.mapToListEventShortDto(page.getContent()))
+                .build();
+        List<ViewStats> viewStats = statisticClient.getViews(eventsId,false);
+        Map<Long,ViewStats> views = new HashMap<>();
+        List<Request> requestList = requestRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Request>> requests = requestList
+                .stream()
+                .filter(request -> request.getStatus().equals(RequestStatus.CONFIRMED))
+                .collect(Collectors.groupingBy(r -> r.getEvent().getEventId()));
+        List<Comment> commentList = commentRepository.findAllByEventEventIdIn(eventsId);
+        Map<Long,List<Comment>> comments = commentList
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getEvent().getEventId()));
+        for (ViewStats stat:viewStats) {
+            views.put(Long.parseLong(stat.getUri().replace("/events/", "")),stat);
+        }
+        for (EventShortDto eventShort: shortDto.getEvents()) {
+            if (views.containsKey(eventShort.getId())) {
+                eventShort.setViews(views.get(eventShort.getId()).getHits());
+            } else {
+                eventShort.setViews(0L);
+            }
+        }
+        for (EventShortDto eventShortDto: shortDto.getEvents()) {
+            if (requests.containsKey(eventShortDto.getId())) {
+                eventShortDto.setConfirmedRequests((long) requests.get(eventShortDto.getId()).size());
+            }
+        }
+        for (EventShortDto eventShortDto: shortDto.getEvents()) {
+            if (comments.containsKey(eventShortDto.getId())) {
+                eventShortDto.setComments(commentMapper.mapToListCommentShort(comments.get(eventShortDto.getId())));
+            }
+        }
+        return shortDto;
+    }
+
 }

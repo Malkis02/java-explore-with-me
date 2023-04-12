@@ -16,8 +16,7 @@ import ru.practicum.dto.ViewStats;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -32,17 +31,35 @@ public class StatisticClient extends BaseClient {
                 .build());
     }
 
-    public Long getViews(Long eventId) {
+    public Long getViews(Long eventId,Boolean isUniq) {
         String url = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
         Map<String, Object> parameters = Map.of(
         "start", LocalDateTime.now().minusYears(100).format(formatter),
                 "end", LocalDateTime.now().format(formatter),
                 "uris", "/events/" + eventId,
-                "unique", "false"
+                "unique", isUniq
         );
         ResponseEntity<List<ViewStats>> response = get(url, parameters);
         List<ViewStats> viewStatsList = response.hasBody() ? response.getBody() : null;
         return viewStatsList != null && !viewStatsList.isEmpty() ? viewStatsList.get(0).getHits() : 0L;
+    }
+
+    public  List<ViewStats> getViews(List<Long> eventId,Boolean isUniq) {
+        String url = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
+        List<ViewStats> viewStatsList = new ArrayList<>();
+            for (Long id : eventId) {
+                Map<String, Object> parameters = Map.of(
+                        "start", LocalDateTime.now().minusYears(100).format(formatter),
+                        "end", LocalDateTime.now().format(formatter),
+                        "uris", "/events/" + id,
+                        "unique", isUniq
+                );
+                ResponseEntity<List<ViewStats>> response = get(url, parameters);
+                if (Objects.requireNonNull(response.getBody()).size() != 0) {
+                    viewStatsList.add(response.getBody().get(0));
+                }
+            }
+        return  viewStatsList;
     }
 
     public void postStats(HttpServletRequest servlet, String app) {

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.server.category.dto.ListCategoryDto;
 import ru.practicum.server.category.dto.NewCategoryDto;
 import ru.practicum.server.category.dto.NewCategoryDtoResp;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@Transactional
 public class CategoryServiceImp implements CategoryService {
     private final CategoryRepository categories;
 
@@ -57,6 +59,7 @@ public class CategoryServiceImp implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ListCategoryDto getCategories(Pageable pageable) {
         return ListCategoryDto
                 .builder()
@@ -65,6 +68,7 @@ public class CategoryServiceImp implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public NewCategoryDtoResp getCategoryById(Long catId) {
         return mapper.mapToNewCategoryDtoResp(categories.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category with id=" + catId + " was not found")));

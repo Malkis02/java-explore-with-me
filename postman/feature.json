@@ -1,0 +1,1543 @@
+{
+  "info": {
+    "_postman_id": "693a0692-15f2-415d-bb8f-98993d350e92",
+    "name": "feature",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23143745"
+  },
+  "item": [
+    {
+      "name": "users",
+      "item": [
+        {
+          "name": "add user1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Данные в ответе должны соответствовать запросу\", () => {\r",
+                  "    var body = pm.response.json();\r",
+                  "\r",
+                  "    pm.expect(body.id, '\"id\" field').eq(64);\r",
+                  "    pm.expect(body.name, '\"name\" field').eq('User1');\r",
+                  "    pm.expect(body.email, '\"email\" field').eq('user1@hotmail.com')\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\":\"User1\",\r\n    \"email\":\"user1@hotmail.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add bad user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Данные в ответе должны соответствовать запросу\", () => {\r",
+                  "    var body = pm.response.json();\r",
+                  "\r",
+                  "    pm.expect(body.id, '\"id\" field').eq(65);\r",
+                  "    pm.expect(body.name, '\"name\" field').eq('Bad user');\r",
+                  "    pm.expect(body.email, '\"email\" field').eq('bad_user@hotmail.com')\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\":\"Bad user\",\r\n    \"email\":\"bad_user@hotmail.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"данные ответа не совпадают с ожидаемыми\", () => {\r",
+                  "    var body = pm.response.json();\r",
+                  "\r",
+                  "    pm.expect(body[0].id, 'result[0]: \"id\" field').eq(64);\r",
+                  "    pm.expect(body[0].name, 'result[0]: \"name\" field').eq('User1');\r",
+                  "    pm.expect(body[0].email, 'result[0]: \"email\" field').eq('user1@hotmail.com')\r",
+                  "\r",
+                  "    pm.expect(body[1].id, 'result[0]: \"id\" field').eq(65);\r",
+                  "    pm.expect(body[1].name, 'result[0]: \"name\" field').eq('Bad user');\r",
+                  "    pm.expect(body[1].email, 'result[0]: \"email\" field').eq('bad_user@hotmail.com')\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?ids=64,65",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "ids",
+                  "value": "64,65"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Ответ должен содержать код успеха и тело в формате JSON\", () => {",
+              "    pm.response.to.be.success;",
+              "    pm.response.to.be.withBody;",
+              "    pm.response.to.be.json;",
+              "})"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "categories",
+      "item": [
+        {
+          "name": "add category1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Данные ответа не совпадают с ожидаемыми\", () => {\r",
+                  "    var response = pm.response.json();\r",
+                  "\r",
+                  "    pm.expect(response.id, '\"id\" field').eq(59);\r",
+                  "    pm.expect(response.name, '\"name\" field').eq('category1');\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\":\"category1\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get category1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Данные в ответе не совпадают с ожидаемыми\", () => {\r",
+                  "    var response = pm.response.json();\r",
+                  "\r",
+                  "    pm.expect(response.id, '\"id\" field').eq(59);\r",
+                  "    pm.expect(response.name, '\"name\" field').eq('category1');\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/:catId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                ":catId"
+              ],
+              "variable": [
+                {
+                  "key": "catId",
+                  "value": "59"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Ответ должен содержать код успеха и тело в формате JSON\", () => {",
+              "    pm.response.to.be.success;",
+              "    pm.response.to.be.withBody;",
+              "    pm.response.to.be.json;",
+              "})"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "events",
+      "item": [
+        {
+          "name": "add event1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Ответ должен содержать код статуса 201 и данные в формате json\", () =>  {\r",
+                  "    pm.response.to.have.status(201);  \r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "const source = JSON.parse(pm.request.body.raw);\r",
+                  "const target = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Событие должно содержать поля: id, title, annotation, category, paid, eventDate, initiator, description, participantLimit, state, createdOn, location, requestModeration\",() => {\r",
+                  "pm.expect(target).to.have.property('id');\r",
+                  "pm.expect(target).to.have.property('title');\r",
+                  "pm.expect(target).to.have.property('annotation');\r",
+                  "pm.expect(target).to.have.property('category');\r",
+                  "pm.expect(target).to.have.property('paid');\r",
+                  "pm.expect(target).to.have.property('eventDate');\r",
+                  "pm.expect(target).to.have.property('initiator');\r",
+                  "pm.expect(target).to.have.property('description');\r",
+                  "pm.expect(target).to.have.property('participantLimit');\r",
+                  "pm.expect(target).to.have.property('state');\r",
+                  "pm.expect(target).to.have.property('createdOn');\r",
+                  "pm.expect(target).to.have.property('location');\r",
+                  "pm.expect(target).to.have.property('requestModeration');\r",
+                  "pm.expect(target).to.have.property('comments');\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Данные в ответе должны соответствовать данным в запросе\", () =>  {\r",
+                  "    pm.expect(target.id).to.not.be.null;\r",
+                  "    pm.expect(target.title).equal(source.title, 'Название события должно соответствовать названию события в запросе');\r",
+                  "    pm.expect(target.annotation).equal(source.annotation, 'Аннотация события должна соответствовать аннотации события в запросе');\r",
+                  "    pm.expect(target.paid.toString()).equal(source.paid.toString(), 'Стоимость события должна соответствовать стоимости события в запросе');\r",
+                  "    pm.expect(target.eventDate).equal(source.eventDate, 'Дата проведения события должна соответствовать дате проведения события в запросе');\r",
+                  "    pm.expect(target.description).equal(source.description, 'Описание события должно соответствовать описание события в запросе');\r",
+                  "    pm.expect(target.participantLimit.toString()).equal(source.participantLimit.toString(), 'Лимит участников события должно соответствовать лимиту участников события в запросе');\r",
+                  "    pm.expect(target.location.lat.toString()).equal(source.location.lat.toString(), 'Широта локации проведения события должна соответствовать широте локации проведения события в запросе');\r",
+                  "    pm.expect(target.location.lon.toString()).equal(source.location.lon.toString(), 'Долгота локации проведения события должна соответствовать долготе локации проведения события в запросе');\r",
+                  "    pm.expect(target.requestModeration.toString()).equal(source.requestModeration.toString(), 'Необходимость модерации события должна соответствовать необходимости модерации события в запросе');\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"annotation\":\"Nesciunt quasi magnam labore beatae est fugit quia quis. Est expedita facere. Ipsam atque est omnis esse explicabo eum. Sapiente quas dolore. Necessitatibus temporibus est totam iusto modi nobis eos adipisci voluptas.\",\r\n    \"category\":58,\r\n    \"description\":\"Eos cumque libero velit accusantium aliquid maiores et ut aut. Corrupti non sit ducimus non. Officia totam odit dolorem ut.\\n \\rSaepe ipsam beatae aut sed minus ducimus doloremque. Provident officiis commodi vel dolores qui repudiandae error quia. Dolorem odio qui nihil sunt atque. Voluptatibus et nulla ab similique aliquam cum ad doloribus. Eligendi autem fugit et qui veritatis modi. Recusandae quae perferendis similique ut quam ipsam.\\n \\rEos natus dolorem officiis sequi molestiae quis culpa quod. Id quis aut illo accusantium hic. Est fugiat consequatur soluta repellendus ipsum voluptatem. Ad similique aut quasi temporibus inventore corporis. Aut id aliquam eos deserunt alias dolore tempora harum. Qui quia accusantium.\",\r\n    \"eventDate\":\"2123-02-11 20:03:36\",\r\n    \"location\":{\"lat\":-78.9404,\"lon\":44.2589},\r\n    \"paid\":\"false\",\r\n    \"participantLimit\":\"545\",\r\n    \"requestModeration\":\"true\",\r\n    \"title\":\"Iusto unde non et voluptatem facere quisquam.\"\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:userId/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":userId",
+                "events"
+              ],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "64"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "add user1 comment for not published event1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 409\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(409);\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"text\": \"user1 cooment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments?eventId=37",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "publish event1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Ответ должен содержать код статуса 200 и данные в формате json\", function () {\r",
+              "    pm.response.to.be.ok;    \r",
+              "    pm.response.to.be.withBody;\r",
+              "    pm.response.to.be.json;\r",
+              "});\r",
+              "\r",
+              "const source = pm.collectionVariables.get('response');\r",
+              "const target = pm.response.json();\r",
+              "console.log(source)\r",
+              "console.log(target)\r",
+              "pm.test(\"Событие должно содержать поля: id, title, annotation, category, paid, eventDate, initiator, description, participantLimit, state, createdOn, publishedOn, location, requestModeration\", function () {\r",
+              "pm.expect(target).to.have.property('id');\r",
+              "pm.expect(target).to.have.property('title');\r",
+              "pm.expect(target).to.have.property('annotation');\r",
+              "pm.expect(target).to.have.property('category');\r",
+              "pm.expect(target).to.have.property('paid');\r",
+              "pm.expect(target).to.have.property('eventDate');\r",
+              "pm.expect(target).to.have.property('initiator');\r",
+              "pm.expect(target).to.have.property('description');\r",
+              "pm.expect(target).to.have.property('participantLimit');\r",
+              "pm.expect(target).to.have.property('state');\r",
+              "pm.expect(target).to.have.property('createdOn');\r",
+              "pm.expect(target).to.have.property('publishedOn');\r",
+              "pm.expect(target).to.have.property('location');\r",
+              "pm.expect(target).to.have.property('requestModeration');\r",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"annotation\": \"Nesciunt quasi magnam labore beatae est fugit quia quis. Est expedita facere. Ipsam atque est omnis esse explicabo eum. Sapiente quas dolore. Necessitatibus temporibus est totam iusto modi nobis eos adipisci voluptas.\",\r\n  \"category\": 1,\r\n  \"description\": \"Eos cumque libero velit accusantium aliquid maiores et ut aut. Corrupti non sit ducimus non. Officia totam odit dolorem ut.\\n \\rSaepe ipsam beatae aut sed minus ducimus doloremque. Provident officiis commodi vel dolores qui repudiandae error quia. Dolorem odio qui nihil sunt atque. Voluptatibus et nulla ab similique aliquam cum ad doloribus. Eligendi autem fugit et qui veritatis modi. Recusandae quae perferendis similique ut quam ipsam.\\n \\rEos natus dolorem officiis sequi molestiae quis culpa quod. Id quis aut illo accusantium hic. Est fugiat consequatur soluta repellendus ipsum voluptatem. Ad similique aut quasi temporibus inventore corporis. Aut id aliquam eos deserunt alias dolore tempora harum. Qui quia accusantium.\",\r\n  \"eventDate\": \"2123-02-11 20:03:36\",\r\n  \"location\": {\r\n    \"lat\": -78.9404,\r\n    \"lon\": 44.2589\r\n  },\r\n  \"paid\": false,\r\n  \"participantLimit\": 545,\r\n  \"requestModeration\": true,\r\n  \"stateAction\": \"PUBLISH_EVENT\",\r\n  \"title\": \"Iusto unde non et voluptatem facere quisquam.\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/admin/events/:eventId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "add user1 comment for published event1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 201\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(201)\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не соответствуют ожидаемым\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.commentId, '\"commentId\" field').eq(1);\r",
+              "    pm.expect(response.text, '\"text\" field').eq('user1 comment');\r",
+              "    pm.expect(response.state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response.authorName, '\"authorName\" field').eq('User1');\r",
+              "    pm.expect(response.eventTitle, '\"eventTitle\" field').eq('Iusto unde non et voluptatem facere quisquam.');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"text\": \"user1 comment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments?eventId=38",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get comment private",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не совпадают с ожидаемыми\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.commentId, '\"commentId\" field').eq(1);\r",
+              "    pm.expect(response.text, '\"text\" field').eq('user1 comment');\r",
+              "    pm.expect(response.state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response.authorName, '\"authorName\" field').eq('User1');\r",
+              "    pm.expect(response.eventTitle, '\"eventTitle\" field').eq('Iusto unde non et voluptatem facere quisquam.');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments/:commentId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments",
+            ":commentId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "commentId",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get comments private",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не совпадают с ожидаемыми\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response[0].text, '\"text\" field').eq('user1 comment');\r",
+              "    pm.expect(response[0].state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response[0].authorName, '\"authorName\" field').eq('User1');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/events/:eventId/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "events",
+            ":eventId",
+            "comments"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get comment public",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не совпадают с ожидаемыми\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.commentId, '\"commentId\" field').eq(1);\r",
+              "    pm.expect(response.text, '\"text\" field').eq('user1 comment');\r",
+              "    pm.expect(response.state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response.authorName, '\"authorName\" field').eq('User1');\r",
+              "    pm.expect(response.eventTitle, '\"eventTitle\" field').eq('Iusto unde non et voluptatem facere quisquam.');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/comments/:commentId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "comments",
+            ":commentId"
+          ],
+          "variable": [
+            {
+              "key": "commentId",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get comments public",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не совпадают с ожидаемыми\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response[0].text, '\"text\" field').eq('user1 comment');\r",
+              "    pm.expect(response[0].state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response[0].authorName, '\"authorName\" field').eq('User1');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/comments?eventId=38",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get event1 with comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Событие должно содежрать комментарии к нему\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.comments[0].text, '\"text\" field').eq('user1 comment');\r",
+              "    pm.expect(response.comments[0].authorName, '\"authorName\" field').eq('User1');\r",
+              "    pm.expect(response.comments[0].state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response.comments[0].created, '\"created\" field').not.be.null;\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/events/:eventId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update user1 comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код ответа должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не соответсвуют ожидаемым\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.commentId, '\"commentId\" field').eq(1);\r",
+              "    pm.expect(response.text, '\"text\" field').eq('update user1 comment');\r",
+              "    pm.expect(response.state, '\"state\" field').eq('EDITED');\r",
+              "    pm.expect(response.authorName, '\"authorName\" field').eq('User1');\r",
+              "    pm.expect(response.eventTitle, '\"eventTitle\" field').eq('Iusto unde non et voluptatem facere quisquam.');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"text\": \"update user1 comment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments/:commentId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments",
+            ":commentId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "commentId",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get event1 with update comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Событие должно содежрать комментарии к нему\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.comments[0].text, '\"text\" field').eq('update user1 comment');\r",
+              "    pm.expect(response.comments[0].authorName, '\"authorName\" field').eq('User1');\r",
+              "    pm.expect(response.comments[0].state, '\"state\" field').eq('EDITED');\r",
+              "    pm.expect(response.comments[0].created, '\"created\" field').not.be.null;\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/events/:eventId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete user1 comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 204\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(204);\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments/:commentId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments",
+            ":commentId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "commentId",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get event1 without comments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Событие недолжно содежрать комментарии к нему\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.comments.length, 'comments count in total').to.eq(0);\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/events/:eventId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "add bad user comment for published event1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 201\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(201)\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не соответствуют ожидаемым\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.commentId, '\"commentId\" field').eq(2);\r",
+              "    pm.expect(response.text, '\"text\" field').eq('bad comment');\r",
+              "    pm.expect(response.state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response.authorName, '\"authorName\" field').eq('Bad user');\r",
+              "    pm.expect(response.eventTitle, '\"eventTitle\" field').eq('Iusto unde non et voluptatem facere quisquam.');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"text\": \"bad comment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments?eventId=39",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "65"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "report bad user comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 204\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(204);\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/comments?reportUserId=64&commentId=2",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "reportUserId",
+              "value": "65"
+            },
+            {
+              "key": "commentId",
+              "value": "2"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "duplicate report bad user comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 409\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(409);\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/comments?reportUserId=64&commentId=2",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "reportUserId",
+              "value": "65"
+            },
+            {
+              "key": "commentId",
+              "value": "2"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get report on bad user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(200)\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не соответствуют ожидаемым\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.reportId, '\"reportId\" field').eq(1);\r",
+              "    pm.expect(response.reportedUser, '\"reportedUser\" field').eq(65);\r",
+              "    pm.expect(response.reportedMessage, '\"reportedMessage\" field').eq('bad comment');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/reports/users/:userId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "reports",
+            "users",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "65"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "admin delete bad user comment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 204\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(204);\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/users/:userId/comments/:commentId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "users",
+            ":userId",
+            "comments",
+            ":commentId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "65"
+            },
+            {
+              "key": "commentId",
+              "value": "2"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get event1 without bad user comments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.be.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Событие недолжно содежрать комментарии к нему\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.comments.length, 'comments count in total').to.eq(0);\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/events/:eventId",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "64"
+            },
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ban bad user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не соответсвуют ожидаемым\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.length, 'array length').to.be.gte(1);\r",
+              "    pm.expect(response[0].id, '\"id\" field').eq(65);\r",
+              "    pm.expect(response[0].name, '\"name\" field').eq('Bad user');\r",
+              "    pm.expect(response[0].email, '\"email\" field').eq('bad_user@hotmail.com');\r",
+              "    pm.expect(response[0].areCommentsBlocked, '\"areCommentsBlocked\" field').eq(true);\r",
+              "\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userIds\": [65],\r\n  \"status\": \"BANNED\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/admin/users/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "users",
+            "comments"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "add banned bad user comment for published event1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 409\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(409)\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"text\": \"bad comment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments?eventId=39",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "65"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "unbaned bad user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 200\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не соответсвуют ожидаемым\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.length, 'array length').to.be.gte(1);\r",
+              "    pm.expect(response[0].id, '\"id\" field').eq(65);\r",
+              "    pm.expect(response[0].name, '\"name\" field').eq('Bad user');\r",
+              "    pm.expect(response[0].email, '\"email\" field').eq('bad_user@hotmail.com');\r",
+              "    pm.expect(response[0].areCommentsBlocked, '\"areCommentsBlocked\" field').eq(false);\r",
+              "\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userIds\": [65],\r\n  \"status\": \"UNBANNED\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/admin/users/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "users",
+            "comments"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "add unbanned bad user comment for published event1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Код статуса должен быть 201\", () => {\r",
+              "    pm.expect(pm.response.code).to.eq(201)\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Данные не соответствуют ожидаемым\", () => {\r",
+              "    var response = pm.response.json();\r",
+              "\r",
+              "    pm.expect(response.commentId, '\"commentId\" field').eq(3);\r",
+              "    pm.expect(response.text, '\"text\" field').eq('nice comment');\r",
+              "    pm.expect(response.state, '\"state\" field').eq('NOT_EDIT');\r",
+              "    pm.expect(response.authorName, '\"authorName\" field').eq('Bad user');\r",
+              "    pm.expect(response.eventTitle, '\"eventTitle\" field').eq('Iusto unde non et voluptatem facere quisquam.');\r",
+              "})"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"text\": \"nice comment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/:userId/comments?eventId=39",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ":userId",
+            "comments"
+          ],
+          "query": [
+            {
+              "key": "eventId",
+              "value": "39"
+            }
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "65"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}

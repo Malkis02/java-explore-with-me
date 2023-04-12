@@ -2,6 +2,7 @@ package ru.practicum.server.event.mapper;
 
 import org.mapstruct.*;
 import ru.practicum.server.category.mapper.CategoryMapper;
+import ru.practicum.server.comment.mapper.CommentMapper;
 import ru.practicum.server.event.dto.*;
 import ru.practicum.server.event.enums.State;
 import ru.practicum.server.event.model.Event;
@@ -9,7 +10,7 @@ import ru.practicum.server.user.mapper.UserMapper;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {CategoryMapper.class, UserMapper.class})
+@Mapper(componentModel = "spring", uses = {CategoryMapper.class, UserMapper.class, CommentMapper.class})
 public interface EventMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(source = "eventDate", target = "eventDate", dateFormat = "yyyy-MM-dd HH:mm:ss")
@@ -44,5 +45,5 @@ public interface EventMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(source = "eventDate", target = "eventDate", dateFormat = "yyyy-MM-dd HH:mm:ss")
     Event mapToEvent(UpdateEventAdminRequest updateEvent, @MappingTarget Event event);
-
 }
+

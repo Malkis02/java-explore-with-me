@@ -8,10 +8,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import ru.practicum.server.handler.exception.AccessException;
-import ru.practicum.server.handler.exception.EventStateException;
-import ru.practicum.server.handler.exception.EventUpdateException;
-import ru.practicum.server.handler.exception.NotFoundException;
+import ru.practicum.server.handler.exception.*;
 import ru.practicum.server.handler.response.ApiError;
 
 import javax.validation.ConstraintViolationException;
@@ -73,7 +70,7 @@ public class ErrorHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    @ExceptionHandler({AccessException.class, EventStateException.class})
+    @ExceptionHandler({AccessException.class, EventStateException.class, CommentException.class})
     private ResponseEntity<ApiError> handleExceptions(RuntimeException e) {
         ApiError errorResponse = ApiError.builder()
                 .errors(Arrays.asList(e.getStackTrace()))
